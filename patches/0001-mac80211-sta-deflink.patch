@@ -1,0 +1,150 @@
+diff -ruN stage/smac/ampdu.c work/smac/ampdu.c
+--- stage/smac/ampdu.c
++++ work/smac/ampdu.c
+@@ -844,7 +844,7 @@
+     printk("ssv6200_ampdu_tx_operation:buffer_size=%d\n", buffer_size);
+     ssv_sta_priv->ampdu_tid[tid].ssv_baw_size = SSV_AMPDU_WINDOW_SIZE;
+ #else
+-    ssv_sta_priv->ampdu_tid[tid].ssv_baw_size = IEEE80211_MIN_AMPDU_BUF << sta->ht_cap.ampdu_factor;
++    ssv_sta_priv->ampdu_tid[tid].ssv_baw_size = IEEE80211_MIN_AMPDU_BUF << sta->deflink.ht_cap.ampdu_factor;
+     if(buffer_size > IEEE80211_MAX_AMPDU_BUF) {
+         buffer_size = IEEE80211_MAX_AMPDU_BUF;
+     }
+@@ -993,7 +993,7 @@
+     struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
+     u8 *skb_qos_ctl = ieee80211_get_qos_ctl(hdr);
+     u8 tid_no = skb_qos_ctl[0] & 0xf;
+-    if ((sta->ht_cap.ht_supported == true)
++    if ((sta->deflink.ht_cap.ht_supported == true)
+         && (!!(sc->sh->cfg.hw_caps & SSV6200_HW_CAP_AMPDU_TX))) {
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,32)
+         ieee80211_start_tx_ba_session(sc->hw, (u8*)(sta->addr), (u16)tid_no);
+diff -ruN stage/smac/dev.c work/smac/dev.c
+--- stage/smac/dev.c
++++ work/smac/dev.c
+@@ -1083,7 +1083,7 @@
+ {
+     if ((cipher == SSV_CIPHER_TKIP)
+         || ((!(sc->sh->cfg.hw_caps & SSV6200_HW_CAP_AMPDU_TX) ||
+-             (sta_priv->sta_info->sta->ht_cap.ht_supported == false))
++             (sta_priv->sta_info->sta->deflink.ht_cap.ht_supported == false))
+             && (vif_priv->force_sw_encrypt == false))) {
+         return true;
+     } else {
+diff -ruN stage/smac/ssv_rc.c work/smac/ssv_rc.c
+--- stage/smac/ssv_rc.c
++++ work/smac/ssv_rc.c
+@@ -1004,10 +1004,10 @@
+     }
+     if (rc_rate == NULL) {
+         if (conf_is_ht(&sc->hw->conf) &&
+-            (sta->ht_cap.cap & IEEE80211_HT_CAP_LDPC_CODING))
++            (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_LDPC_CODING))
+             tx_info->flags |= IEEE80211_TX_CTL_LDPC;
+         if (conf_is_ht(&sc->hw->conf) &&
+-            (sta->ht_cap.cap & IEEE80211_HT_CAP_TX_STBC))
++            (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_TX_STBC))
+             tx_info->flags |= (1 << IEEE80211_TX_CTL_STBC_SHIFT);
+         if (sc->sc_flags & SC_OP_FIXED_RATE) {
+             rateidx = sc->max_rate_idx;
+@@ -1171,24 +1171,24 @@
+     rc_sta->is_ht = 0;
+     if(sc->cur_channel->hw_value == 14) {
+         printk("[RC init ]Channel 14 support\n");
+-        if((sta->supp_rates[sband->band] & (~0xfL)) == 0x0) {
++        if((sta->deflink.supp_rates[sband->band] & (~0xfL)) == 0x0) {
+             printk("[RC init ]B only mode\n");
+             rc_sta->rc_type = RC_TYPE_B_ONLY;
+         } else {
+             printk("[RC init ]GB mode\n");
+             rc_sta->rc_type = RC_TYPE_LEGACY_GB;
+         }
+-    } else if (sta->ht_cap.ht_supported == true) {
++    } else if (sta->deflink.ht_cap.ht_supported == true) {
+         printk("[RC init ]HT support wsid\n");
+         for (i = 0; i < SSV_HT_RATE_MAX; i++) {
+-            if (sta->ht_cap.mcs.rx_mask[i/MCS_GROUP_RATES] & (1<<(i%MCS_GROUP_RATES)))
++            if (sta->deflink.ht_cap.mcs.rx_mask[i/MCS_GROUP_RATES] & (1<<(i%MCS_GROUP_RATES)))
+                 ht_supp_rates |= BIT(i);
+         }
+         rc_sta->ht_supp_rates = ht_supp_rates;
+-        if (sta->ht_cap.cap & IEEE80211_HT_CAP_GRN_FLD) {
++        if (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_GRN_FLD) {
+             rc_sta->rc_type = RC_TYPE_HT_GF;
+             rc_sta->ht_rc_type = RC_TYPE_HT_GF;
+-        } else if (sta->ht_cap.cap & IEEE80211_HT_CAP_SGI_20) {
++        } else if (sta->deflink.ht_cap.cap & IEEE80211_HT_CAP_SGI_20) {
+             rc_sta->rc_type = RC_TYPE_SGI_20;
+             rc_sta->ht_rc_type = RC_TYPE_HT_SGI_20;
+         } else {
+@@ -1196,7 +1196,7 @@
+             rc_sta->ht_rc_type = RC_TYPE_HT_LGI_20;
+         }
+     } else {
+-        if((sta->supp_rates[sband->band] & (~0xfL)) == 0x0) {
++        if((sta->deflink.supp_rates[sband->band] & (~0xfL)) == 0x0) {
+             rc_sta->rc_type = RC_TYPE_B_ONLY;
+             printk("[RC init ]B only mode\n");
+         } else {
+@@ -1226,7 +1226,7 @@
+ #endif
+ #endif
+     if((rc_sta->rc_type != RC_TYPE_B_ONLY) && (rc_sta->rc_type != RC_TYPE_LEGACY_GB)) {
+-        if ((sta->ht_cap.ht_supported) && (sh->cfg.hw_caps & SSV6200_HW_CAP_AMPDU_TX)) {
++        if ((sta->deflink.ht_cap.ht_supported) && (sh->cfg.hw_caps & SSV6200_HW_CAP_AMPDU_TX)) {
+             rc_sta->is_ht = 1;
+             ssv62xx_ht_rc_caps(ssv6xxx_rc_rate_set, rc_sta);
+         }
+@@ -1236,14 +1236,14 @@
+         if((rc_sta->rc_type == RC_TYPE_HT_GF) ||
+            (rc_sta->rc_type == RC_TYPE_LGI_20) || (rc_sta->rc_type == RC_TYPE_SGI_20)) {
+             if(rc_sta->rc_num_rate == 12) {
+-                rc_sta->rc_supp_rates = sta->supp_rates[sband->band] & 0xfL;
++                rc_sta->rc_supp_rates = sta->deflink.supp_rates[sband->band] & 0xfL;
+                 rc_sta->rc_supp_rates |= (ht_supp_rates << 4);
+             } else
+                 rc_sta->rc_supp_rates = ht_supp_rates;
+         } else if(rc_sta->rc_type == RC_TYPE_LEGACY_GB)
+-            rc_sta->rc_supp_rates = sta->supp_rates[sband->band];
++            rc_sta->rc_supp_rates = sta->deflink.supp_rates[sband->band];
+         else if(rc_sta->rc_type == RC_TYPE_B_ONLY)
+-            rc_sta->rc_supp_rates = sta->supp_rates[sband->band] & 0xfL;
++            rc_sta->rc_supp_rates = sta->deflink.supp_rates[sband->band] & 0xfL;
+         ssv62xx_rc_caps(rc_sta);
+     }
+ }
+diff -ruN stage/smac/ssv_rc_minstrel.c work/smac/ssv_rc_minstrel.c
+--- stage/smac/ssv_rc_minstrel.c
++++ work/smac/ssv_rc_minstrel.c
+@@ -409,7 +409,7 @@
+     u8 drate_desc = 0;
+     bool supportted_11m = false;
+     minstrel_sta_priv->sta = sta;
+-    minstrel_sta_priv->is_ht = sta->ht_cap.ht_supported;
++    minstrel_sta_priv->is_ht = sta->deflink.ht_cap.ht_supported;
+     if (minstrel_sta_priv->is_ht) {
+         ssv_minstrel_ht_update_caps(priv, sband, sta, priv_sta, oper_chan_type);
+         return;
+diff -ruN stage/smac/ssv_rc_minstrel_ht.c work/smac/ssv_rc_minstrel_ht.c
+--- stage/smac/ssv_rc_minstrel_ht.c
++++ work/smac/ssv_rc_minstrel_ht.c
+@@ -641,7 +641,7 @@
+     struct ssv_minstrel_ht_sta *mhs;
+     struct ssv_minstrel_ht_rate_stats *rate;
+     struct ssv_minstrel_priv *smp = (struct ssv_minstrel_priv *)sc->rc;
+-    u16 sta_cap = minstrel_sta_priv->sta->ht_cap.cap;
++    u16 sta_cap = minstrel_sta_priv->sta->deflink.ht_cap.cap;
+     int group, r_idx, short_gi, ht40, phy;
+     enum nl80211_channel_type channel_type;
+     int i = 0;
+@@ -801,8 +801,8 @@
+     struct ssv_minstrel_priv *smp = (struct ssv_minstrel_priv *)sc->rc;
+     struct ssv_minstrel_sta_priv *sta_priv = priv_sta;
+     struct ssv_minstrel_ht_sta *mhs = &sta_priv->ht;
+-    struct ieee80211_mcs_info *mcs = &sta->ht_cap.mcs;
+-    u16 sta_cap = sta->ht_cap.cap;
++    struct ieee80211_mcs_info *mcs = &sta->deflink.ht_cap.mcs;
++    u16 sta_cap = sta->deflink.ht_cap.cap;
+     int ack_dur;
+     int stbc;
+     bool is_sgi = false;

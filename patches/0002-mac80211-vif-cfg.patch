@@ -1,0 +1,59 @@
+diff -ruN stage/smac/dev.c work/smac/dev.c
+--- stage/smac/dev.c
++++ work/smac/dev.c
+@@ -3646,7 +3646,7 @@
+             if (sc->vif_info[i].vif != NULL) {
+                 vif = sc->vif_info[i].vif;
+                 if ((vif->type == NL80211_IFTYPE_STATION) || (vif->type == NL80211_IFTYPE_P2P_CLIENT)) {
+-                    if (vif->bss_conf.assoc)
++                    if (vif->cfg.assoc)
+                         assoc++;
+                     if (vif->p2p)
+                         p2p++;
+@@ -3664,7 +3664,7 @@
+             if (sc->vif_info[i].vif != NULL) {
+                 vif = sc->vif_info[i].vif;
+                 if ((vif->type == NL80211_IFTYPE_STATION) || (vif->type == NL80211_IFTYPE_P2P_CLIENT)) {
+-                    if (vif->bss_conf.assoc)
++                    if (vif->cfg.assoc)
+                         assoc++;
+                 }
+             }
+@@ -3896,7 +3896,7 @@
+ #endif
+             printk("NL80211_IFTYPE_STATION!!\n");
+             if (changed & BSS_CHANGED_ASSOC) {
+-                sc->isAssoc = info->assoc;
++                sc->isAssoc = vif->cfg.assoc;
+                 if(!sc->isAssoc) {
+                     sc->channel_center_freq = 0;
+                     sc->ps_aid = 0;
+@@ -3905,8 +3905,8 @@
+ #endif
+                 } else {
+                     sc->channel_center_freq = curchan->center_freq;
+-                    printk(KERN_INFO "!!info->aid = %d\n",info->aid);
+-                    sc->ps_aid = info->aid;
++                    printk(KERN_INFO "!!vif->cfg.aid = %d\n",vif->cfg.aid);
++                    sc->ps_aid = vif->cfg.aid;
+ #ifdef SSV_SUPPORT_USB_LPM
+                     SSV_SET_USB_LPM(sc, 0);
+ #endif
+@@ -4011,7 +4011,7 @@
+             for (; s < SSV_NUM_STA; s++) {
+                 sta_info = &sc->sta_info[s];
+                 if ((sta_info->s_flags & STA_FLAG_VALID) == 0) {
+-                    sta_info->aid = sta->aid;
++                    sta_vif->cfg.aid = sta->aid;
+                     sta_info->sta = sta;
+                     sta_info->vif = vif;
+                     sta_info->s_flags = STA_FLAG_VALID;
+@@ -5858,7 +5858,7 @@
+                 if (sc->vif_info[i].vif != NULL) {
+                     vif = sc->vif_info[i].vif;
+                     if ((vif->type == NL80211_IFTYPE_STATION) || (vif->type == NL80211_IFTYPE_P2P_CLIENT)) {
+-                        if (vif->bss_conf.assoc)
++                        if (vif->cfg.assoc)
+                             assoc++;
+                         if (vif->p2p)
+                             p2p++;

@@ -1,0 +1,32 @@
+diff -ruN stage/smac/init.c work/smac/init.c
+--- stage/smac/init.c
++++ work/smac/init.c
+@@ -420,10 +420,10 @@
+                 break;
+             cpu++;
+         }
+-        if(ta->encrypt_task->state & TASK_UNINTERRUPTIBLE) {
++        if((long)READ_ONCE(ta->encrypt_task->__state) & TASK_UNINTERRUPTIBLE) {
+             kthread_bind(ta->encrypt_task, hotcpu);
+         }
+-        printk("encrypt_task %p state is %ld\n", ta->encrypt_task, ta->encrypt_task->state);
++        printk("encrypt_task %p state is %ld\n", ta->encrypt_task, (long)READ_ONCE(ta->encrypt_task->__state));
+         break;
+     }
+     case CPU_ONLINE:
+@@ -435,13 +435,13 @@
+                 if ( (ta->started == 0) && (cpu_online(cpu)) ) {
+                     wake_up_process(ta->encrypt_task);
+                     ta->started = 1;
+-                    printk("wake up encrypt_task %p state is %ld, cpu = %d\n", ta->encrypt_task, ta->encrypt_task->state, cpu);
++                    printk("wake up encrypt_task %p state is %ld, cpu = %d\n", ta->encrypt_task, (long)READ_ONCE(ta->encrypt_task->__state), cpu);
+                 }
+                 break;
+             }
+             cpu++;
+         }
+-        printk("encrypt_task %p state is %ld\n", ta->encrypt_task, ta->encrypt_task->state);
++        printk("encrypt_task %p state is %ld\n", ta->encrypt_task, (long)READ_ONCE(ta->encrypt_task->__state));
+         break;
+     }
+ #ifdef CONFIG_HOTPLUG_CPU

@@ -1,0 +1,12 @@
+diff -ruN stage/hwif/usb/usb.c work/hwif/usb/usb.c
+--- stage/hwif/usb/usb.c
++++ work/hwif/usb/usb.c
+@@ -911,7 +911,7 @@
+ static void __exit ssv6xxx_usb_exit(void)
+ #endif
+ {
+-    if (driver_for_each_device(&ssv_usb_driver.drvwrap.driver, NULL,
++    if (driver_for_each_device(&ssv_usb_driver.driver, NULL,
+                                NULL, ssv_usb_do_device_exit)) {};
+     printk(KERN_INFO "ssv6xxx_usb_exit\n");
+     usb_deregister(&ssv_usb_driver);

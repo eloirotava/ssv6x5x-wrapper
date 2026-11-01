@@ -1,0 +1,24 @@
+diff -ruN stage/smac/efuse.c work/smac/efuse.c
+--- stage/smac/efuse.c
++++ work/smac/efuse.c
+@@ -30,10 +30,7 @@
+ }
+ int readFile(struct file *fp,char *buf,int readlen)
+ {
+-    if (fp->f_op && fp->f_op->read)
+-        return fp->f_op->read(fp,buf,readlen, &fp->f_pos);
+-    else
+-        return -1;
++    return ssv_file_read(fp, buf, readlen, &fp->f_pos);
+ }
+ int closeFile(struct file *fp)
+ {
+@@ -87,7 +84,7 @@
+         len = strlen(buf)+1;
+         old_fs = get_fs();
+         set_fs(KERNEL_DS);
+-        fp->f_op->write(fp, (char *)buf, len, &fp->f_pos);
++        ssv_file_write(fp, (char *)buf, len, &fp->f_pos);
+         set_fs(old_fs);
+         closeFile(fp);
+     } else

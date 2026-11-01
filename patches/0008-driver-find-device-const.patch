@@ -1,0 +1,12 @@
+diff -ruN stage/smac/init.c work/smac/init.c
+--- stage/smac/init.c
++++ work/smac/init.c
+@@ -2166,7 +2166,7 @@
+         .owner = THIS_MODULE,
+     }
+ };
+-static int device_match_by_alias(struct device *dev, void *data)
++static int device_match_by_alias(struct device *dev, const void *data)
+ {
+     struct device_driver *driver = dev->driver;
+     struct _pattern {

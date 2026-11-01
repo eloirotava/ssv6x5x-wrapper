@@ -1,0 +1,20 @@
+diff -ruN stage/smac/init.c work/smac/init.c
+--- stage/smac/init.c
++++ work/smac/init.c
+@@ -2115,7 +2115,7 @@
+         printk("HCI TX task is stopped.\n");
+     }
+ }
+-int tu_ssv6xxx_dev_remove(struct platform_device *pdev)
++void tu_ssv6xxx_dev_remove(struct platform_device *pdev)
+ {
+     struct ieee80211_hw *hw=dev_get_drvdata(&pdev->dev);
+     struct ssv_softc *sc=hw->priv;
+@@ -2125,7 +2125,6 @@
+     printk("ieee80211_free_hw(): \n");
+     ieee80211_free_hw(hw);
+     pr_info("ssv6200: Driver unloaded\n");
+-    return 0;
+ }
+ EXPORT_SYMBOL(tu_ssv6xxx_dev_remove);
+ static const struct platform_device_id ssv6xxx_id_table[] = {

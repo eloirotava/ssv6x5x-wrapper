@@ -1,0 +1,41 @@
+diff -ruN stage/smac/dev.c work/smac/dev.c
+--- stage/smac/dev.c
++++ work/smac/dev.c
+@@ -3296,8 +3296,8 @@
+         }
+         return 0;
+     }
+-    void ssv6xxx_house_keeping(unsigned long argv) {
+-        struct ssv_softc *sc = (struct ssv_softc *)argv;
++    void ssv6xxx_house_keeping(struct timer_list *t) {
++        struct ssv_softc *sc = timer_container_of(sc, t, house_keeping);
+         if (!sc->mac80211_dev_started ||
+             (sc->sc_flags & SC_OP_HW_RESET) ||
+             (sc->sc_flags & SC_OP_BLOCK_CNTL))
+diff -ruN stage/smac/dev.h work/smac/dev.h
+--- stage/smac/dev.h
++++ work/smac/dev.h
+@@ -1038,7 +1038,7 @@
+ #endif
+ int ssv6xxx_tx_task (void *data);
+ int ssv6xxx_rx_task (void *data);
+-void ssv6xxx_house_keeping(unsigned long argv);
++void ssv6xxx_house_keeping(struct timer_list *t);
+ void ssv6xxx_rx_stuck_process(struct work_struct *work);
+ void ssv6xxx_mib_edca_process(struct work_struct *work);
+ void ssv6xxx_tx_poll_process(struct work_struct *work);
+diff -ruN stage/smac/init.c work/smac/init.c
+--- stage/smac/init.c
++++ work/smac/init.c
+@@ -748,10 +748,8 @@
+     sc->cmd_data.dbg_log.size = 0;
+     sc->cmd_data.dbg_log.totalsize = 0;
+     sc->cmd_data.dbg_log.data = NULL;
+-    init_timer(&sc->house_keeping);
++    timer_setup(&sc->house_keeping, ssv6xxx_house_keeping, 0);
+     sc->house_keeping.expires = jiffies + msecs_to_jiffies(HOUSE_KEEPING_TIMEOUT);
+-    sc->house_keeping.function = ssv6xxx_house_keeping;
+-    sc->house_keeping.data = (unsigned long)sc;
+     sc->house_keeping_wq= create_singlethread_workqueue("ssv6xxx_house_keeping_wq");
+     INIT_WORK(&sc->rx_stuck_work, ssv6xxx_rx_stuck_process);
+     INIT_WORK(&sc->mib_edca_work, ssv6xxx_mib_edca_process);

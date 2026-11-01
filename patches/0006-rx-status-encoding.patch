@@ -1,0 +1,27 @@
+diff -ruN stage/smac/hal/ssv6006c/ssv6006_phy.c work/smac/hal/ssv6006c/ssv6006_phy.c
+--- stage/smac/hal/ssv6006c/ssv6006_phy.c
++++ work/smac/hal/ssv6006c/ssv6006_phy.c
+@@ -1095,19 +1095,19 @@
+ {
+     if (((hw_rate_idx & SSV6006RC_PHY_MODE_MSK) >>
+          SSV6006RC_PHY_MODE_SFT)== SSV6006RC_N_MODE) {
+-        rxs->flag |= RX_FLAG_HT;
++        rxs->encoding = RX_ENC_HT;
+         if (((hw_rate_idx & SSV6006RC_20_40_MSK) >>
+              SSV6006RC_20_40_SFT) == SSV6006RC_HT40) {
+-            rxs->flag |= RX_FLAG_40MHZ;
++            rxs->bw = RATE_INFO_BW_40;
+         }
+         if (((hw_rate_idx & SSV6006RC_LONG_SHORT_MSK) >>
+              SSV6006RC_LONG_SHORT_SFT) == SSV6006RC_SHORT) {
+-            rxs->flag |= RX_FLAG_SHORT_GI;
++            rxs->enc_flags |= RX_ENC_FLAG_SHORT_GI;
+         }
+     } else {
+         if (((hw_rate_idx & SSV6006RC_LONG_SHORT_MSK) >>
+              SSV6006RC_LONG_SHORT_SFT) == SSV6006RC_SHORT) {
+-            rxs->flag |= RX_FLAG_SHORTPRE;
++            rxs->enc_flags |= RX_ENC_FLAG_SHORTPRE;
+         }
+     }
+     rxs->rate_idx = (hw_rate_idx & SSV6006RC_RATE_MSK) >>
