@@ -357,7 +357,11 @@ struct ssv_crypto_cipher *ssv_crypto_alloc_cipher(const char *name)
 int ssv_crypto_cipher_setkey(struct ssv_crypto_cipher *t, const u8 *k,
 			     unsigned int len)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
 	return aes_prepareenckey(&t->key, k, len);
+#else
+	return aes_expandkey(&t->key, k, len);
+#endif
 }
 
 void ssv_crypto_cipher_encrypt_one(struct ssv_crypto_cipher *t, u8 *dst,

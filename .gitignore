@@ -4,3 +4,4 @@ stage/
 *.o
 *.ko
 *.cmd
+__pycache__/

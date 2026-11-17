@@ -124,8 +124,14 @@ struct ssv_crypto_cipher_alg {
 	const char *cra_name, *cra_driver_name;
 	struct module *cra_module;
 };
+/* a API de AES da lib/crypto mudou no 7.0 (aes_enckey/aes_prepareenckey) */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0)
+#define SSV_AES_KEY_T struct aes_enckey
+#else
+#define SSV_AES_KEY_T struct crypto_aes_ctx
+#endif
 struct ssv_crypto_cipher {
-	struct aes_enckey key;
+	SSV_AES_KEY_T key;
 	/* o driver imprime tfm->base.__crt_alg->cra_name */
 	struct { const struct ssv_crypto_cipher_alg *__crt_alg; } base;
 };
