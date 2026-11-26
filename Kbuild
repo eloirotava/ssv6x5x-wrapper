@@ -17,6 +17,9 @@ ccflags-y += -DMULTI_THREAD_ENCRYPT
 ccflags-y += -DKTHREAD_BIND
 ccflags-y += -DCONFIG_SSV_RSSI
 ccflags-y += -DCONFIG_SSV_VENDOR_EXT_SUPPORT
+# Envia ao enfileirar: hosts SDIO sem IRQ de cartao fazem polling e,
+# sem isto, cada pacote espera um tick (ver o wrapper do SSV6051).
+ccflags-y += -DENABLE_WAKE_IO_ISR_WHEN_HCI_ENQUEUE
 
 ccflags-y += -I$(src) -I$(src)/include -I$(src)/compat/include
 ccflags-y += -include $(src)/compat/compat.h

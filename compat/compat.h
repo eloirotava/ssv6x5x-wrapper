@@ -374,4 +374,49 @@ struct ieee80211_hw *ssv_compat_alloc_hw(size_t priv_len,
 #define ieee80211_rate_control_unregister(o) ssv_rate_control_unregister(o)
 #endif
 
+/*
+ * DMA de SDIO a partir da pilha. O fabricante le e escreve registradores
+ * com buffers locais (u8 data[4]) passados direto a sdio_memcpy_*. Com
+ * CONFIG_VMAP_STACK (arm64) a pilha fica em vmalloc e o host (meson-gx-mmc)
+ * derruba o kernel ao mapear o buffer. Quando o buffer nao serve para DMA,
+ * a transferencia passa por um buffer de kmalloc. O vendor/ continua intocado.
+ */
+#include <linux/mmc/sdio_func.h>
+#include <linux/sched/task_stack.h>
+#include <linux/slab.h>
+#include <linux/mm.h>
+
+static inline bool ssv_dma_ok(const void *p)
+{
+	return virt_addr_valid(p) && !object_is_on_stack(p);
+}
+
+static inline int ssv_sdio_xfer(struct sdio_func *f, void *buf, unsigned int addr,
+				int cnt, bool rd, bool fifo)
+{
+	void *b;
+	int ret;
+
+	if (ssv_dma_ok(buf))
+		return rd ? (fifo ? sdio_readsb(f, buf, addr, cnt) : sdio_memcpy_fromio(f, buf, addr, cnt))
+			  : (fifo ? sdio_writesb(f, addr, buf, cnt) : sdio_memcpy_toio(f, addr, buf, cnt));
+	b = kmalloc(cnt, GFP_ATOMIC);
+	if (!b)
+		return -ENOMEM;
+	if (!rd)
+		memcpy(b, buf, cnt);
+	ret = rd ? (fifo ? sdio_readsb(f, b, addr, cnt) : sdio_memcpy_fromio(f, b, addr, cnt))
+		 : (fifo ? sdio_writesb(f, addr, b, cnt) : sdio_memcpy_toio(f, addr, b, cnt));
+	if (rd && !ret)
+		memcpy(buf, b, cnt);
+	kfree(b);
+	return ret;
+}
+
+#define sdio_memcpy_fromio(f, d, a, c) ssv_sdio_xfer((f), (d), (a), (c), true, false)
+#define sdio_memcpy_toio(f, a, s, c)   ssv_sdio_xfer((f), (void *)(s), (a), (c), false, false)
+#define sdio_readsb(f, d, a, c)        ssv_sdio_xfer((f), (d), (a), (c), true, true)
+#define sdio_writesb(f, a, s, c)       ssv_sdio_xfer((f), (void *)(s), (a), (c), false, true)
+
+
 #endif /* SSV_COMPAT_H */

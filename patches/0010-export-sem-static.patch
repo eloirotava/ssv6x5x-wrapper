@@ -1,0 +1,7 @@
+diff -ruN stage/ssvdevice/ssvdevice.c work/ssvdevice/ssvdevice.c
+--- stage/ssvdevice/ssvdevice.c
++++ work/ssvdevice/ssvdevice.c
+@@ -46,2 +46,2 @@
+-static char *tu_stacfgpath = "/lib/firmware/ssv6x5x-wifi.cfg";
++char *tu_stacfgpath = "/lib/firmware/ssv6x5x-wifi.cfg";
+ EXPORT_SYMBOL(tu_stacfgpath);
