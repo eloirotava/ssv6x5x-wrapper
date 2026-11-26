@@ -5,3 +5,7 @@ stage/
 *.ko
 *.cmd
 __pycache__/
+bench/results-*/
+kernel/
+build.log
+bench/*.log

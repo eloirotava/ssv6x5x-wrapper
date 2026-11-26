@@ -419,4 +419,20 @@ static inline int ssv_sdio_xfer(struct sdio_func *f, void *buf, unsigned int add
 #define sdio_writesb(f, a, s, c)       ssv_sdio_xfer((f), (void *)(s), (a), (c), false, true)
 
 
+/*
+ * O envio ao enfileirar chama mmc_signal_sdio_irq(), que desliga a IRQ de
+ * SDIO do host e acorda o ksdioirqd. Hosts com IRQ de verdade e sem esse
+ * thread (dw_mmc: MMC_CAP2_SDIO_IRQ_NOTHREAD) nunca religam a IRQ por esse
+ * caminho; para eles o certo e sdio_signal_irq(), que agenda o tratamento.
+ */
+#include <linux/mmc/host.h>
+static inline void ssv_signal_sdio_irq(struct mmc_host *h)
+{
+	if (h->caps2 & MMC_CAP2_SDIO_IRQ_NOTHREAD)
+		sdio_signal_irq(h);
+	else
+		mmc_signal_sdio_irq(h);
+}
+#define mmc_signal_sdio_irq(h) ssv_signal_sdio_irq(h)
+
 #endif /* SSV_COMPAT_H */
