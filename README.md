@@ -83,7 +83,32 @@ O módulo se chama `ssv6x5x_original` para não colidir com o teu `ssv6x5x`.
 - Compila sem erro contra o **7.2.15** em `arm` e `arm64` (GCC 14), sem aviso
   de tipo de ponteiro, conversão ou função implícita.
 - Todos os símbolos que o módulo usa são exportados pelo 7.2.15.
-- **Ainda não rodou em hardware.** Os pontos de atenção são os mesmos do 6051:
-  `ieee80211_tx_status` fora de softirq (se o lockdep reclamar, troque para
-  `_ni` em `compat.h`), a fila de TX e o contexto de canal emulados, e a
-  crypto em software reimplementada.
+- **Roda em hardware**: RK3229 (TV box RK322x), Armbian, kernel
+  **7.2.8-edge-rockchip**, cliente WPA2-PSK em 2,4 e 5 GHz, HT40 em 5 GHz.
+
+### Três correções de plataforma (o `vendor/` continua intocado)
+
+| onde | o que | por quê |
+|---|---|---|
+| `compat.h` | buffers de pilha passados a `sdio_memcpy_*` vão por `kmalloc` | com `CONFIG_VMAP_STACK` a pilha fica em vmalloc e não serve para DMA |
+| `Kbuild` | `-DENABLE_WAKE_IO_ISR_WHEN_HCI_ENQUEUE` | o envio esperava a IRQ do chip; em host que faz polling, um pacote por tick |
+| `compat.h` | `sdio_signal_irq()` em hosts `MMC_CAP2_SDIO_IRQ_NOTHREAD` | `mmc_signal_sdio_irq()` desliga a IRQ e conta com o `ksdioirqd`, que o `dw_mmc` não tem |
+
+### Vazão medida
+
+Mesma caixa, BSSID travado, boot limpo por driver, `iperf3` TCP de 10 s
+em cada sentido, conferido pelos contadores de bytes do `wlan0`
+(subida / descida, Mbit/s):
+
+| banda | reescrita `ssv6xxx` (legacy) | este wrapper |
+|---|---|---|
+| 2,4 GHz, 20 MHz, −23 dBm | 8,6 / 8,8 | **18,5 / 32,0** |
+| 5 GHz, HT40, −70 dBm | 5,9 / 7,3 | **48,9 / 61,9** |
+
+Antes da terceira correção, o wrapper ficava em 0,5 Mbit/s nas duas bandas.
+
+### Limitações conhecidas
+
+- O módulo pode recusar `rmmod` (*busy*); para trocar de driver, reinicie.
+- Os três drivers atendem o mesmo cartão SDIO (0x3030:0x3030): só um por vez.
+- `bench/` tem os scripts de medição (parâmetros por variável de ambiente).
